@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">AnyText</string>
+    <string name="enter_new_text">Enter new text</string>
+    <string name="apply">Apply</string>
+    <string name="perform_origin_click">Perform original click</string>
+    <string name="text_cannot_be_empty">Text cannot be empty</string>
+    <string name="successfully_modified">Successfully modified</string>
+    <string name="anytext_working_now">AnyText is working now</string>
+    <string name="edit_text_dialog_title">Change any text you want</string>
 </resources>
