@@ -7,4 +7,6 @@
     <string name="successfully_modified">Successfully modified</string>
     <string name="anytext_working_now">AnyText is working now</string>
     <string name="edit_text_dialog_title">Change any text you want</string>
+    <string name="enable_color_border">Enable color border</string>
+    <string name="option_change_hint">Cation: You need to restart apps after change any options in this page.</string>
 </resources>

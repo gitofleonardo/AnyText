@@ -4,7 +4,6 @@ import android.app.AlertDialog
 import android.content.Context
 import android.os.Bundle
 import android.text.SpannableString
-import android.util.Log
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
@@ -12,6 +11,7 @@ import android.widget.*
 import androidx.core.view.isVisible
 import com.hhvvg.anytext.R
 import com.hhvvg.anytext.hook.AnyHookLoaded.Companion.moduleRes
+import com.hhvvg.anytext.utils.dp2px
 import com.hhvvg.anytext.wrapper.TextViewOnClickWrapper
 
 private const val TAG = "TextEditingDialog"
@@ -34,7 +34,8 @@ class TextEditingDialog(
         val parentView = LinearLayout(context)
         parentView.gravity = Gravity.CENTER
         parentView.orientation = LinearLayout.VERTICAL
-        parentView.setPadding(24, 24, 24, 24)
+        val pad = dp2px(context, 24.0f).toInt()
+        parentView.setPadding(pad, pad, pad, pad)
         applyButton = Button(context)
         originButton = Button(context)
         editText = EditText(context)
