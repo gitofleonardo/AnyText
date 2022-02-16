@@ -74,9 +74,9 @@ class TextEditingDialog(
         } else {
             originButton.setOnClickListener {
                 if (onClickListener is TextViewOnClickWrapper) {
-                    onClickListener.performOriginClick(it)
+                    onClickListener.performOriginClick()
                 } else {
-                    onClickListener.onClick(it)
+                    onClickListener.onClick(textView)
                 }
                 dismiss()
             }

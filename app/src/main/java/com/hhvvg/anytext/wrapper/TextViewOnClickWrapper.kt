@@ -7,7 +7,7 @@ import com.hhvvg.anytext.ui.TextEditingDialog
 
 const val IGNORE_HOOK = "IGNORE_HOOK"
 
-class TextViewOnClickWrapper(private val originListener: View.OnClickListener?) : View.OnClickListener {
+class TextViewOnClickWrapper(private val originListener: View.OnClickListener?, private val originView: View) : View.OnClickListener {
     override fun onClick(v: View?) {
         if (v == null) {
             return
@@ -19,8 +19,8 @@ class TextViewOnClickWrapper(private val originListener: View.OnClickListener?) 
         openTextEditingDialog(v.context, v, originListener)
     }
 
-    fun performOriginClick(v: View) {
-        originListener?.onClick(null)
+    fun performOriginClick() {
+        originListener?.onClick(originView)
     }
 
     private fun openTextEditingDialog(

@@ -4,17 +4,16 @@ import android.app.Activity
 import android.app.AndroidAppHelper
 import android.app.Application
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
-import android.graphics.Color
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import android.widget.Toast
 import androidx.core.view.children
 import com.hhvvg.anytext.utils.DEFAULT_SHARED_PREFERENCES_FILE_NAME
-import com.hhvvg.anytext.utils.KEY_SHOW_TEXT_BORDER
 import com.hhvvg.anytext.utils.PACKAGE_NAME
+import com.hhvvg.anytext.utils.SETTING_SERVICE_ACTION
 import com.hhvvg.anytext.wrapper.TextViewOnClickWrapper
 import de.robv.android.xposed.IXposedHookLoadPackage
 import de.robv.android.xposed.XC_MethodHook
@@ -48,12 +47,13 @@ class AnyHookLoaded : IXposedHookLoadPackage {
         } else {
             Application::class.java
         }
-        val methodHook = PackageMethodHook()
+        val methodHook = ApplicationOnCreateMethodHook()
         val method = XposedHelpers.findMethodBestMatch(appClazz, "onCreate", arrayOf(), arrayOf())
         XposedBridge.hookMethod(method, methodHook)
     }
 
-    private class PackageMethodHook : XC_MethodHook() {
+    private class ApplicationOnCreateMethodHook : XC_MethodHook() {
+
         override fun afterHookedMethod(param: MethodHookParam?) {
             if (param == null) {
                 return
@@ -66,6 +66,11 @@ class AnyHookLoaded : IXposedHookLoadPackage {
             )
             // Update application class name
             updateApplicationClassName(sp, packageName, appName)
+            // Get text style settings
+            val intent = Intent().apply {
+                action = SETTING_SERVICE_ACTION
+                `package` = PACKAGE_NAME
+            }
             hookLifecycleCallback(app, ActivityCallback())
         }
 
@@ -91,13 +96,8 @@ class AnyHookLoaded : IXposedHookLoadPackage {
         }
     }
 
-    private class ActivityCallback : Application.ActivityLifecycleCallbacks {
-        private val spInstance: SharedPreferences =
-            XSharedPreferences(PACKAGE_NAME, DEFAULT_SHARED_PREFERENCES_FILE_NAME).apply {
-                makeWorldReadable()
-            }
-        private val showBorder: Boolean
-            get() = spInstance.getBoolean(KEY_SHOW_TEXT_BORDER, false)
+    private class ActivityCallback() :
+        Application.ActivityLifecycleCallbacks {
 
         override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
         }
@@ -123,15 +123,11 @@ class AnyHookLoaded : IXposedHookLoadPackage {
                 val info = XposedHelpers.callMethod(child, "getListenerInfo")
                 val originListener =
                     XposedHelpers.getObjectField(info, "mOnClickListener")
-                if (showBorder) {
-                    // child.setBackgroundColor(Color.BLUE)
-                    child.setTextColor(Color.RED)
-                }
                 if (originListener == null) {
-                    child.setOnClickListener(TextViewOnClickWrapper(null))
+                    child.setOnClickListener(TextViewOnClickWrapper(null, child))
                 } else if (originListener !is TextViewOnClickWrapper) {
                     // Not hooked
-                    child.setOnClickListener(TextViewOnClickWrapper(originListener as View.OnClickListener))
+                    child.setOnClickListener(TextViewOnClickWrapper(originListener as View.OnClickListener, child))
                 }
             }
         }
