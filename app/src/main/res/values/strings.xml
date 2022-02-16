@@ -9,4 +9,9 @@
     <string name="edit_text_dialog_title">Change any text you want</string>
     <string name="enable_color_border">Enable color border</string>
     <string name="option_change_hint">Cation: You need to restart apps after change any options in this page.</string>
+    <string name="about">About</string>
+    <string name="about_description">This app provides features to change text of most of the TextView in native Android app. Just click any text in an app and enter new text, then apply, every thing will be done.</string>
+    <string name="requirement_content">System requirements:\n1.Root\n2.Xposed framework installed</string>
+    <string name="github">Github</string>
+    <string name="get_source">Get source code on Github</string>
 </resources>

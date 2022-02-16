@@ -7,3 +7,5 @@ const val DEFAULT_SHARED_PREFERENCES_FILE_NAME = "DefaultAnyTextSharedPreference
 const val KEY_SHOW_TEXT_BORDER = "key_show_border"
 
 const val SETTING_SERVICE_ACTION = "com.hhvvg.settings.service.provider"
+
+const val GITHUB_PAGE_URL = "https://github.com/gitofleonardo/AnyText"

@@ -10,16 +10,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.AnyText">
-        <service
-            android:name=".SettingsService"
-            android:enabled="true"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="com.hhvvg.settings.service.provider"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-            </intent-filter>
-        </service>
+        android:theme="@style/AppTheme">
         <meta-data
             android:name="xposedmodule"
             android:value="true" />
