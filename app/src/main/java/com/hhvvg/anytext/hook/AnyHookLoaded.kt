@@ -39,13 +39,10 @@ class AnyHookLoaded : IXposedHookLoadPackage {
         }
         val spInstance = XSharedPreferences(packageName, DEFAULT_SHARED_PREFERENCES_FILE_NAME)
         val appName = spInstance.getString(packageName, null)
-        XposedBridge.log("Get application class: $appName from file")
         val appClazz: Class<Application> = if (appName != null) {
             try {
                 XposedHelpers.findClass(appName, p0.classLoader) as Class<Application>
             } catch (e: Exception) {
-                XposedBridge.log("Failed to load application class: $appName")
-                XposedBridge.log(e.stackTraceToString())
                 Application::class.java
             }
         } else {
@@ -54,7 +51,6 @@ class AnyHookLoaded : IXposedHookLoadPackage {
         val methodHook = PackageMethodHook()
         val method = XposedHelpers.findMethodBestMatch(appClazz, "onCreate", arrayOf(), arrayOf())
         XposedBridge.hookMethod(method, methodHook)
-        XposedBridge.log("Hook package: ${p0.packageName}, application: ${appClazz.name}")
     }
 
     private class PackageMethodHook : XC_MethodHook() {
@@ -71,8 +67,6 @@ class AnyHookLoaded : IXposedHookLoadPackage {
             // Update application class name
             updateApplicationClassName(sp, packageName, appName)
             hookLifecycleCallback(app, ActivityCallback())
-            Toast.makeText(app.applicationContext, "App Hooked, app: $appName", Toast.LENGTH_SHORT)
-                .show()
         }
 
         private fun hookLifecycleCallback(
@@ -94,7 +88,6 @@ class AnyHookLoaded : IXposedHookLoadPackage {
             val edit = sp.edit()
             edit.putString(packageNameAsKey, name)
             edit.apply()
-            XposedBridge.log("Save package application class name: $name")
         }
     }
 
@@ -104,7 +97,7 @@ class AnyHookLoaded : IXposedHookLoadPackage {
                 makeWorldReadable()
             }
         private val showBorder: Boolean
-            get() = spInstance.getBoolean(KEY_SHOW_TEXT_BORDER, true)
+            get() = spInstance.getBoolean(KEY_SHOW_TEXT_BORDER, false)
 
         override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
         }

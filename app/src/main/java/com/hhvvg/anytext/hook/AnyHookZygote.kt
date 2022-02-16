@@ -4,6 +4,11 @@ import android.content.res.Resources
 import android.content.res.XModuleResources
 import de.robv.android.xposed.IXposedHookZygoteInit
 
+/**
+ * @author hhvvg
+ *
+ * Hook zygote and get resources.
+ */
 class AnyHookZygote : IXposedHookZygoteInit {
     override fun initZygote(p0: IXposedHookZygoteInit.StartupParam?) {
         if (p0 == null) {
