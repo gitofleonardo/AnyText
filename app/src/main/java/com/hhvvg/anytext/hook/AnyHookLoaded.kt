@@ -3,9 +3,8 @@ package com.hhvvg.anytext.hook
 import android.app.Activity
 import android.app.AndroidAppHelper
 import android.app.Application
+import android.content.Context
 import android.content.SharedPreferences
-import android.content.res.Resources
-import android.content.res.XModuleResources
 import android.graphics.Color
 import android.os.Bundle
 import android.view.View
@@ -17,26 +16,44 @@ import com.hhvvg.anytext.utils.DEFAULT_SHARED_PREFERENCES_FILE_NAME
 import com.hhvvg.anytext.utils.KEY_SHOW_TEXT_BORDER
 import com.hhvvg.anytext.utils.PACKAGE_NAME
 import com.hhvvg.anytext.wrapper.TextViewOnClickWrapper
-import de.robv.android.xposed.*
+import de.robv.android.xposed.IXposedHookLoadPackage
+import de.robv.android.xposed.XC_MethodHook
+import de.robv.android.xposed.XSharedPreferences
+import de.robv.android.xposed.XposedBridge
+import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.callbacks.XC_LoadPackage
 
-class AnyHookLoaded : IXposedHookLoadPackage, IXposedHookZygoteInit {
-    private val methodHook = PackageMethodHook()
-
+/**
+ * Class for package hook.
+ * @author hhvvg
+ */
+class AnyHookLoaded : IXposedHookLoadPackage {
     override fun handleLoadPackage(p0: XC_LoadPackage.LoadPackageParam?) {
         if (p0 == null) {
             return
         }
+        val packageName = p0.packageName
         // Don't hook itself
-        if (p0.packageName == PACKAGE_NAME) {
+        if (packageName == PACKAGE_NAME) {
             return
         }
-        val appClazz = Application::class.java
-        XposedHelpers.findAndHookMethod(
-            appClazz,
-            "onCreate",
-            methodHook
-        )
+        val spInstance = XSharedPreferences(packageName, DEFAULT_SHARED_PREFERENCES_FILE_NAME)
+        val appName = spInstance.getString(packageName, null)
+        XposedBridge.log("Get application class: $appName from file")
+        val appClazz: Class<Application> = if (appName != null) {
+            try {
+                XposedHelpers.findClass(appName, p0.classLoader) as Class<Application>
+            } catch (e: Exception) {
+                XposedBridge.log("Failed to load application class: $appName")
+                XposedBridge.log(e.stackTraceToString())
+                Application::class.java
+            }
+        } else {
+            Application::class.java
+        }
+        val methodHook = PackageMethodHook()
+        val method = XposedHelpers.findMethodBestMatch(appClazz, "onCreate", arrayOf(), arrayOf())
+        XposedBridge.hookMethod(method, methodHook)
         XposedBridge.log("Hook package: ${p0.packageName}, application: ${appClazz.name}")
     }
 
@@ -46,20 +63,48 @@ class AnyHookLoaded : IXposedHookLoadPackage, IXposedHookZygoteInit {
                 return
             }
             val app = AndroidAppHelper.currentApplication()
-            app.registerActivityLifecycleCallbacks(ActivityCallback())
-            Toast.makeText(
-                app.applicationContext,
-                "App Hooked, app: ${AndroidAppHelper.currentApplication()::class.java.name}",
-                Toast.LENGTH_SHORT
-            ).show()
+            val appName = AndroidAppHelper.currentApplication()::class.java.name
+            val packageName = AndroidAppHelper.currentApplicationInfo().packageName
+            val sp = app.applicationContext.getSharedPreferences(
+                DEFAULT_SHARED_PREFERENCES_FILE_NAME, Context.MODE_PRIVATE
+            )
+            // Update application class name
+            updateApplicationClassName(sp, packageName, appName)
+            hookLifecycleCallback(app, ActivityCallback())
+            Toast.makeText(app.applicationContext, "App Hooked, app: $appName", Toast.LENGTH_SHORT)
+                .show()
+        }
+
+        private fun hookLifecycleCallback(
+            app: Application,
+            callback: Application.ActivityLifecycleCallbacks
+        ) {
+            val clazz = app::class.java
+            val callbackField = XposedHelpers.findField(clazz, "mActivityLifecycleCallbacks")
+            val callbackArray =
+                callbackField.get(app) as ArrayList<Application.ActivityLifecycleCallbacks>
+            callbackArray.add(callback)
+        }
+
+        private fun updateApplicationClassName(
+            sp: SharedPreferences,
+            packageNameAsKey: String,
+            name: String
+        ) {
+            val edit = sp.edit()
+            edit.putString(packageNameAsKey, name)
+            edit.apply()
+            XposedBridge.log("Save package application class name: $name")
         }
     }
 
     private class ActivityCallback : Application.ActivityLifecycleCallbacks {
         private val spInstance: SharedPreferences =
-            XSharedPreferences(PACKAGE_NAME, DEFAULT_SHARED_PREFERENCES_FILE_NAME)
+            XSharedPreferences(PACKAGE_NAME, DEFAULT_SHARED_PREFERENCES_FILE_NAME).apply {
+                makeWorldReadable()
+            }
         private val showBorder: Boolean
-            get() = spInstance.getBoolean(KEY_SHOW_TEXT_BORDER, false)
+            get() = spInstance.getBoolean(KEY_SHOW_TEXT_BORDER, true)
 
         override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
         }
@@ -75,7 +120,6 @@ class AnyHookLoaded : IXposedHookLoadPackage, IXposedHookZygoteInit {
         private fun iterateHook(viewGroup: ViewGroup) {
             val children = viewGroup.children
             for (child in children) {
-                XposedBridge.log("View class: ${child.javaClass.name}")
                 if (child is ViewGroup) {
                     iterateHook(child)
                     continue
@@ -87,7 +131,7 @@ class AnyHookLoaded : IXposedHookLoadPackage, IXposedHookZygoteInit {
                 val originListener =
                     XposedHelpers.getObjectField(info, "mOnClickListener")
                 if (showBorder) {
-                    child.setBackgroundColor(Color.BLUE)
+                    // child.setBackgroundColor(Color.BLUE)
                     child.setTextColor(Color.RED)
                 }
                 if (originListener == null) {
@@ -96,7 +140,6 @@ class AnyHookLoaded : IXposedHookLoadPackage, IXposedHookZygoteInit {
                     // Not hooked
                     child.setOnClickListener(TextViewOnClickWrapper(originListener as View.OnClickListener))
                 }
-                XposedBridge.log("Hooked one text view: ${child.javaClass.name}")
             }
         }
 
@@ -116,24 +159,6 @@ class AnyHookLoaded : IXposedHookLoadPackage, IXposedHookZygoteInit {
         }
 
         override fun onActivityDestroyed(activity: Activity) {
-        }
-    }
-
-    override fun initZygote(p0: IXposedHookZygoteInit.StartupParam?) {
-        if (p0 == null) {
-            return
-        }
-        modulePath = p0.modulePath
-        moduleRes = getModuleRes(modulePath)
-    }
-
-    companion object {
-        lateinit var moduleRes: Resources
-        lateinit var modulePath: String
-
-        @JvmStatic
-        fun getModuleRes(path: String): Resources {
-            return XModuleResources.createInstance(path, null)
         }
     }
 }

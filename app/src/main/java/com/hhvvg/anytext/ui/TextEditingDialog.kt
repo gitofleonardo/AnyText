@@ -7,10 +7,14 @@ import android.text.SpannableString
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
-import android.widget.*
+import android.widget.Button
+import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.TextView
+import android.widget.Toast
 import androidx.core.view.isVisible
 import com.hhvvg.anytext.R
-import com.hhvvg.anytext.hook.AnyHookLoaded.Companion.moduleRes
+import com.hhvvg.anytext.hook.AnyHookZygote.Companion.moduleRes
 import com.hhvvg.anytext.utils.dp2px
 import com.hhvvg.anytext.wrapper.TextViewOnClickWrapper
 
