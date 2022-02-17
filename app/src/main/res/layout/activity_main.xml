@@ -113,6 +113,12 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"/>
                     <TextView
+                        android:layout_marginTop="12dp"
+                        android:textColor="?attr/colorOnSecondary"
+                        android:text="@string/highlight_text_not_perfect"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"/>
+                    <TextView
                         android:textColor="?attr/colorOnSecondary"
                         android:text="@string/highlight_text_caution"
                         android:layout_marginTop="12dp"
