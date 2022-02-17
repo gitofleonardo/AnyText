@@ -19,3 +19,7 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Preserve these two hook class
+-keep class com.hhvvg.anytext.hook.AnyHookLoaded
+-keep class com.hhvvg.anytext.hook.AnyHookZygote
