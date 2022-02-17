@@ -2,19 +2,26 @@ package com.hhvvg.anytext.ui
 
 import android.app.AlertDialog
 import android.content.Context
+import android.content.SharedPreferences
+import android.graphics.Color
 import android.os.Bundle
 import android.text.SpannableString
 import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.Button
+import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.view.children
 import androidx.core.view.isVisible
 import com.hhvvg.anytext.R
 import com.hhvvg.anytext.hook.AnyHookZygote.Companion.moduleRes
+import com.hhvvg.anytext.utils.DEFAULT_SHARED_PREFERENCES_FILE_NAME
+import com.hhvvg.anytext.utils.KEY_SHOW_TEXT_BORDER
 import com.hhvvg.anytext.utils.dp2px
 import com.hhvvg.anytext.wrapper.TextViewOnClickWrapper
 
@@ -28,6 +35,20 @@ class TextEditingDialog(
     private lateinit var applyButton: Button
     private lateinit var originButton: Button
     private lateinit var editText: EditText
+    private lateinit var highlightTextCheckBox: CheckBox
+    private val spInstance: SharedPreferences by lazy {
+        context.getSharedPreferences(
+            DEFAULT_SHARED_PREFERENCES_FILE_NAME, Context.MODE_PRIVATE
+        )
+    }
+    private var showTextHighlight: Boolean = false
+        get() = spInstance.getBoolean(KEY_SHOW_TEXT_BORDER, false)
+        set(value) {
+            field = value
+            val edit = spInstance.edit()
+            edit.putBoolean(KEY_SHOW_TEXT_BORDER, value)
+            edit.apply()
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,18 +59,28 @@ class TextEditingDialog(
         val parentView = LinearLayout(context)
         parentView.gravity = Gravity.CENTER
         parentView.orientation = LinearLayout.VERTICAL
-        val pad = dp2px(context, 24.0f).toInt()
-        parentView.setPadding(pad, pad, pad, pad)
+        val padding = dp2px(context, 24.0f).toInt()
+        parentView.setPadding(padding, padding, padding, padding)
         applyButton = Button(context)
         originButton = Button(context)
         editText = EditText(context)
+        highlightTextCheckBox = CheckBox(context)
         parentView.apply {
             addView(editText)
             addView(originButton)
             addView(applyButton)
+            addView(highlightTextCheckBox)
         }
         applyButton.text = moduleRes.getText(R.string.apply)
         originButton.text = moduleRes.getText(R.string.perform_origin_click)
+        highlightTextCheckBox.text = moduleRes.getText(R.string.highlight_text)
+
+        highlightTextCheckBox.isChecked = showTextHighlight
+        highlightTextCheckBox.setOnCheckedChangeListener { _, isChecked ->
+            showTextHighlight = isChecked
+            val rootView = textView.rootView as ViewGroup
+            dfsHighlightText(rootView, isChecked)
+        }
 
         applyButton.setOnClickListener {
             val text = editText.text.toString()
@@ -83,8 +114,22 @@ class TextEditingDialog(
         }
         val originText = textView.text.toString()
         editText.setText(originText)
-
         setContentView(parentView)
+    }
+
+    private fun dfsHighlightText(parent: ViewGroup, highlight: Boolean) {
+        for (child in parent.children) {
+            if (child is ViewGroup) {
+                dfsHighlightText(child, highlight)
+                continue
+            }
+            if (child !is TextView) {
+                continue
+            }
+            if (highlight) {
+                child.setTextColor(Color.RED)
+            }
+        }
     }
 
     override fun show() {

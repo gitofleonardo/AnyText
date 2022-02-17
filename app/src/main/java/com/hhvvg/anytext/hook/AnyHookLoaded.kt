@@ -4,16 +4,16 @@ import android.app.Activity
 import android.app.AndroidAppHelper
 import android.app.Application
 import android.content.Context
-import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Color
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.core.view.children
 import com.hhvvg.anytext.utils.DEFAULT_SHARED_PREFERENCES_FILE_NAME
+import com.hhvvg.anytext.utils.KEY_SHOW_TEXT_BORDER
 import com.hhvvg.anytext.utils.PACKAGE_NAME
-import com.hhvvg.anytext.utils.SETTING_SERVICE_ACTION
 import com.hhvvg.anytext.wrapper.TextViewOnClickWrapper
 import de.robv.android.xposed.IXposedHookLoadPackage
 import de.robv.android.xposed.XC_MethodHook
@@ -66,12 +66,7 @@ class AnyHookLoaded : IXposedHookLoadPackage {
             )
             // Update application class name
             updateApplicationClassName(sp, packageName, appName)
-            // Get text style settings
-            val intent = Intent().apply {
-                action = SETTING_SERVICE_ACTION
-                `package` = PACKAGE_NAME
-            }
-            hookLifecycleCallback(app, ActivityCallback())
+            hookLifecycleCallback(app, ActivityCallback(packageName))
         }
 
         private fun hookLifecycleCallback(
@@ -96,8 +91,11 @@ class AnyHookLoaded : IXposedHookLoadPackage {
         }
     }
 
-    private class ActivityCallback() :
-        Application.ActivityLifecycleCallbacks {
+    private class ActivityCallback(packageName: String) : Application.ActivityLifecycleCallbacks {
+        private val spInstance: SharedPreferences =
+            XSharedPreferences(packageName, DEFAULT_SHARED_PREFERENCES_FILE_NAME)
+        private val showTextHighlight: Boolean
+            get() = spInstance.getBoolean(KEY_SHOW_TEXT_BORDER, false)
 
         override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
         }
@@ -127,7 +125,16 @@ class AnyHookLoaded : IXposedHookLoadPackage {
                     child.setOnClickListener(TextViewOnClickWrapper(null, child))
                 } else if (originListener !is TextViewOnClickWrapper) {
                     // Not hooked
-                    child.setOnClickListener(TextViewOnClickWrapper(originListener as View.OnClickListener, child))
+                    child.setOnClickListener(
+                        TextViewOnClickWrapper(
+                            originListener as View.OnClickListener,
+                            child
+                        )
+                    )
+                }
+                // Set text highlight or not
+                if (showTextHighlight) {
+                    child.setTextColor(Color.RED)
                 }
             }
         }

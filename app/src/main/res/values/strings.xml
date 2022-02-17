@@ -13,4 +13,5 @@
     <string name="github">Github</string>
     <string name="get_source">Get source code on Github</string>
     <string name="caution_text">Caution: This software is completely free and open-source, and only for learning usage. Please download this software from my Github page, or compile source code by yourself. Avoid using source-unknown packages.</string>
+    <string name="highlight_text">Highlight text</string>
 </resources>
