@@ -16,16 +16,21 @@ android {
         applicationId "com.hhvvg.anytext"
         minSdk 23
         targetSdk 31
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "1.0.1"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
+            shrinkResources true
+            debuggable false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            minifyEnabled false
         }
     }
     compileOptions {
@@ -38,6 +43,18 @@ android {
 
     viewBinding {
         enabled = true
+    }
+
+    applicationVariants.all { variant ->
+        variant.outputs.all {
+            def fileName = 'AnyText.apk'
+            if (variant.buildType.name == 'release') {
+                fileName = "AnyText-${variant.mergedFlavor.versionName}-release.apk"
+            } else if (variant.buildType.name == 'debug'){
+                fileName = "AnyText-${variant.mergedFlavor.versionName}-debug.apk"
+            }
+            outputFileName = fileName
+        }
     }
 }
 
