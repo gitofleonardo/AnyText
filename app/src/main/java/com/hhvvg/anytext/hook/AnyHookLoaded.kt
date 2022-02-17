@@ -66,7 +66,7 @@ class AnyHookLoaded : IXposedHookLoadPackage {
             )
             // Update application class name
             updateApplicationClassName(sp, packageName, appName)
-            hookLifecycleCallback(app, ActivityCallback(packageName))
+            hookLifecycleCallback(app, ActivityCallback())
         }
 
         private fun hookLifecycleCallback(
@@ -91,28 +91,26 @@ class AnyHookLoaded : IXposedHookLoadPackage {
         }
     }
 
-    private class ActivityCallback(packageName: String) : Application.ActivityLifecycleCallbacks {
-        private val spInstance: SharedPreferences =
-            XSharedPreferences(packageName, DEFAULT_SHARED_PREFERENCES_FILE_NAME)
-        private val showTextHighlight: Boolean
-            get() = spInstance.getBoolean(KEY_SHOW_TEXT_BORDER, false)
+    private class ActivityCallback : Application.ActivityLifecycleCallbacks {
 
         override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
         }
 
         override fun onActivityPostCreated(activity: Activity, savedInstanceState: Bundle?) {
+            val spInstance = activity.getSharedPreferences(DEFAULT_SHARED_PREFERENCES_FILE_NAME, Context.MODE_PRIVATE)
+            val showTextHighlight = spInstance.getBoolean(KEY_SHOW_TEXT_BORDER, false)
             val contentView = activity.window.decorView as ViewGroup
-            iterateHook(contentView)
+            iterateHook(contentView, showTextHighlight)
             contentView.viewTreeObserver.addOnGlobalLayoutListener {
-                iterateHook(contentView)
+                iterateHook(contentView, showTextHighlight)
             }
         }
 
-        private fun iterateHook(viewGroup: ViewGroup) {
+        private fun iterateHook(viewGroup: ViewGroup, showHighlight: Boolean) {
             val children = viewGroup.children
             for (child in children) {
                 if (child is ViewGroup) {
-                    iterateHook(child)
+                    iterateHook(child, showHighlight)
                     continue
                 }
                 if (child !is TextView) {
@@ -133,7 +131,7 @@ class AnyHookLoaded : IXposedHookLoadPackage {
                     )
                 }
                 // Set text highlight or not
-                if (showTextHighlight) {
+                if (showHighlight) {
                     child.setTextColor(Color.RED)
                 }
             }
