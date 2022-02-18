@@ -16,7 +16,6 @@
     <string name="highlight_text">Highlight text</string>
     <string name="highlight_text_not_perfect">Text highlighting is not perfect yet, and some text color might not change. Reselect highlight option might help.</string>
     <string name="about_highlighted_text">You can only change those texts which can be highlighted(Exceptions may be exist).</string>
-    <string name="highlight_text_caution">If you highlight text in a page(we call it Activity) and then cancel the highlight, the text color won\'t restore to the origin color, since I don\'t store every original color of text. So it needs you to restart the application page.</string>
     <string name="caution">Caution</string>
     <string name="app_not_perfect_caution">This App cannot 100% hook text content, And it can only change text content in native Android App(e.g. Flutter/Web page is not supported).</string>
 </resources>

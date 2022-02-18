@@ -17,7 +17,6 @@
     <string name="highlight_text">强调文本颜色</string>
     <string name="highlight_text_not_perfect">文本强调色仍未完美，有些文本颜色未能修改。你可能需要重新选择复选框来刷新强调色着色文本。</string>
     <string name="about_highlighted_text">你只能修改那些能够变换强调色的文本内容（可能会有例外）。</string>
-    <string name="highlight_text_caution">如果你在某个页面中开启了强调色，然后又取消了，此时页面文本颜色是不会恢复原来的颜色的，因为我不会去存储每个文本原来的颜色。此时你只需要重启一下该页面就可以了。</string>
     <string name="caution">注意事项</string>
     <string name="app_not_perfect_caution">本应用并不能保证能修改百分百的文本内容，而且能修改的内容也仅限于原生的Android应用，像Flutter与Web之类的是不支持的。</string>
 </resources>
