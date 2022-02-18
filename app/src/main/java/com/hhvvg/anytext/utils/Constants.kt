@@ -7,3 +7,5 @@ const val DEFAULT_SHARED_PREFERENCES_FILE_NAME = "DefaultAnyTextSharedPreference
 const val KEY_SHOW_TEXT_BORDER = "key_show_border"
 
 const val GITHUB_PAGE_URL = "https://github.com/gitofleonardo/AnyText"
+
+const val APP_HIGHLIGHT_FIELD_NAME = "FIELD_BOOLEAN_TEXTVIEW_HIGHLIGHT"

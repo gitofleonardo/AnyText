@@ -7,14 +7,21 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Color
 import android.os.Bundle
+import android.text.Spannable
+import android.text.SpannableString
+import android.text.style.BackgroundColorSpan
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.core.view.children
+import com.hhvvg.anytext.utils.APP_HIGHLIGHT_FIELD_NAME
 import com.hhvvg.anytext.utils.DEFAULT_SHARED_PREFERENCES_FILE_NAME
 import com.hhvvg.anytext.utils.KEY_SHOW_TEXT_BORDER
 import com.hhvvg.anytext.utils.PACKAGE_NAME
+import com.hhvvg.anytext.utils.appPropertyInject
+import com.hhvvg.anytext.utils.getAppInjectedProperty
 import com.hhvvg.anytext.utils.hookViewListener
+import com.hhvvg.anytext.wrapper.IGNORE_HOOK
 import com.hhvvg.anytext.wrapper.TextViewOnClickWrapper
 import de.robv.android.xposed.IXposedHookLoadPackage
 import de.robv.android.xposed.XC_MethodHook
@@ -52,6 +59,44 @@ class AnyHookLoaded : IXposedHookLoadPackage {
             View.OnClickListener::class.java
         )
         XposedBridge.hookMethod(clickMethod, clickMethodHook)
+
+        // Hook setText to make text highlighted
+        val setTextHook = TextViewSetTextMethodHook()
+        val setTextMethod2Arg = XposedHelpers.findMethodBestMatch(
+            TextView::class.java,
+            "setText",
+            CharSequence::class.java,
+            TextView.BufferType::class.java
+        )
+        XposedBridge.hookMethod(setTextMethod2Arg, setTextHook)
+    }
+
+    private class TextViewSetTextMethodHook : XC_MethodHook() {
+
+        override fun beforeHookedMethod(param: MethodHookParam?) {
+            if (param == null) {
+                return
+            }
+            val textView = param.thisObject
+            if (textView !is TextView || textView.tag == IGNORE_HOOK) {
+                return
+            }
+            val textArg = (param.args[0] ?: return).toString()
+            val showHighlight = getAppInjectedProperty<Boolean>(
+                textView.context.applicationContext as Application,
+                APP_HIGHLIGHT_FIELD_NAME
+            )
+            if (showHighlight) {
+                val spanString = SpannableString(textArg)
+                spanString.setSpan(
+                    BackgroundColorSpan(Color.RED),
+                    0,
+                    textArg.length,
+                    Spannable.SPAN_INCLUSIVE_INCLUSIVE
+                )
+                param.args[0] = spanString
+            }
+        }
     }
 
     private class TextViewOnClickMethodHook : XC_MethodHook() {
@@ -91,6 +136,9 @@ class AnyHookLoaded : IXposedHookLoadPackage {
             // Update application class name
             updateApplicationClassName(sp, packageName, appName)
             hookLifecycleCallback(app, ActivityCallback())
+
+            // Add global highlight property
+            appPropertyInject(app, APP_HIGHLIGHT_FIELD_NAME, sp.getBoolean(KEY_SHOW_TEXT_BORDER, false))
         }
 
         private fun hookLifecycleCallback(
@@ -121,23 +169,18 @@ class AnyHookLoaded : IXposedHookLoadPackage {
         }
 
         override fun onActivityPostCreated(activity: Activity, savedInstanceState: Bundle?) {
-            val spInstance = activity.getSharedPreferences(
-                DEFAULT_SHARED_PREFERENCES_FILE_NAME,
-                Context.MODE_PRIVATE
-            )
-            val showTextHighlight = spInstance.getBoolean(KEY_SHOW_TEXT_BORDER, false)
             val contentView = activity.window.decorView as ViewGroup
-            dfsHookTextView(contentView, showTextHighlight)
+            dfsHookTextView(contentView)
             contentView.viewTreeObserver.addOnGlobalLayoutListener {
-                dfsHookTextView(contentView, showTextHighlight)
+                dfsHookTextView(contentView)
             }
         }
 
-        private fun dfsHookTextView(viewGroup: ViewGroup, showHighlight: Boolean) {
+        private fun dfsHookTextView(viewGroup: ViewGroup) {
             val children = viewGroup.children
             for (child in children) {
                 if (child is ViewGroup) {
-                    dfsHookTextView(child, showHighlight)
+                    dfsHookTextView(child)
                     continue
                 }
                 if (child !is TextView) {
@@ -150,10 +193,6 @@ class AnyHookLoaded : IXposedHookLoadPackage {
                     } else {
                         TextViewOnClickWrapper(originListener, child)
                     }
-                }
-                // Set text highlight or not
-                if (showHighlight) {
-                    child.setTextColor(Color.RED)
                 }
             }
         }

@@ -1,9 +1,9 @@
 package com.hhvvg.anytext.ui
 
 import android.app.AlertDialog
+import android.app.AndroidAppHelper
 import android.content.Context
 import android.content.SharedPreferences
-import android.graphics.Color
 import android.os.Bundle
 import android.text.SpannableString
 import android.view.Gravity
@@ -20,9 +20,13 @@ import androidx.core.view.children
 import androidx.core.view.isVisible
 import com.hhvvg.anytext.R
 import com.hhvvg.anytext.hook.AnyHookZygote.Companion.moduleRes
+import com.hhvvg.anytext.utils.APP_HIGHLIGHT_FIELD_NAME
 import com.hhvvg.anytext.utils.DEFAULT_SHARED_PREFERENCES_FILE_NAME
 import com.hhvvg.anytext.utils.KEY_SHOW_TEXT_BORDER
+import com.hhvvg.anytext.utils.appPropertyInject
+import com.hhvvg.anytext.utils.clearTextHighlight
 import com.hhvvg.anytext.utils.dp2px
+import com.hhvvg.anytext.utils.highlightText
 import com.hhvvg.anytext.wrapper.IGNORE_HOOK
 import com.hhvvg.anytext.wrapper.TextViewOnClickWrapper
 
@@ -77,10 +81,13 @@ class TextEditingDialog(
         highlightTextCheckBox.text = moduleRes.getText(R.string.highlight_text)
         applyButton.tag = IGNORE_HOOK
         originButton.tag = IGNORE_HOOK
+        highlightTextCheckBox.tag = IGNORE_HOOK
+        editText.tag = IGNORE_HOOK
 
         highlightTextCheckBox.isChecked = showTextHighlight
         highlightTextCheckBox.setOnCheckedChangeListener { _, isChecked ->
             showTextHighlight = isChecked
+            appPropertyInject(AndroidAppHelper.currentApplication(), APP_HIGHLIGHT_FIELD_NAME, isChecked)
             val rootView = textView.rootView as ViewGroup
             dfsHighlightText(rootView, isChecked)
         }
@@ -130,7 +137,9 @@ class TextEditingDialog(
                 continue
             }
             if (highlight) {
-                child.setTextColor(Color.RED)
+                highlightText(child)
+            } else {
+                clearTextHighlight(child)
             }
         }
     }
