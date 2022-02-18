@@ -66,8 +66,12 @@ class TextEditingDialog(
         parentView.orientation = LinearLayout.VERTICAL
         val padding = dp2px(context, 24.0f).toInt()
         parentView.setPadding(padding, padding, padding, padding)
-        applyButton = Button(context)
-        originButton = Button(context)
+        applyButton = Button(context).apply {
+            isAllCaps = false
+        }
+        originButton = Button(context).apply {
+            isAllCaps = false
+        }
         editText = EditText(context)
         highlightTextCheckBox = CheckBox(context)
         applyButton.tag = IGNORE_HOOK
@@ -87,7 +91,11 @@ class TextEditingDialog(
         highlightTextCheckBox.isChecked = showTextHighlight
         highlightTextCheckBox.setOnCheckedChangeListener { _, isChecked ->
             showTextHighlight = isChecked
-            appPropertyInject(AndroidAppHelper.currentApplication(), APP_HIGHLIGHT_FIELD_NAME, isChecked)
+            appPropertyInject(
+                AndroidAppHelper.currentApplication(),
+                APP_HIGHLIGHT_FIELD_NAME,
+                isChecked
+            )
             val rootView = textView.rootView as ViewGroup
             dfsHighlightText(rootView, isChecked)
         }
