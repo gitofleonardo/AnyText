@@ -70,6 +70,10 @@ class TextEditingDialog(
         originButton = Button(context)
         editText = EditText(context)
         highlightTextCheckBox = CheckBox(context)
+        applyButton.tag = IGNORE_HOOK
+        originButton.tag = IGNORE_HOOK
+        highlightTextCheckBox.tag = IGNORE_HOOK
+        editText.tag = IGNORE_HOOK
         parentView.apply {
             addView(editText)
             addView(originButton)
@@ -79,10 +83,6 @@ class TextEditingDialog(
         applyButton.text = moduleRes.getText(R.string.apply)
         originButton.text = moduleRes.getText(R.string.perform_origin_click)
         highlightTextCheckBox.text = moduleRes.getText(R.string.highlight_text)
-        applyButton.tag = IGNORE_HOOK
-        originButton.tag = IGNORE_HOOK
-        highlightTextCheckBox.tag = IGNORE_HOOK
-        editText.tag = IGNORE_HOOK
 
         highlightTextCheckBox.isChecked = showTextHighlight
         highlightTextCheckBox.setOnCheckedChangeListener { _, isChecked ->
