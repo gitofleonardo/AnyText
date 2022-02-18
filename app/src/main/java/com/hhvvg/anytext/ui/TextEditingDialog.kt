@@ -23,6 +23,7 @@ import com.hhvvg.anytext.hook.AnyHookZygote.Companion.moduleRes
 import com.hhvvg.anytext.utils.DEFAULT_SHARED_PREFERENCES_FILE_NAME
 import com.hhvvg.anytext.utils.KEY_SHOW_TEXT_BORDER
 import com.hhvvg.anytext.utils.dp2px
+import com.hhvvg.anytext.wrapper.IGNORE_HOOK
 import com.hhvvg.anytext.wrapper.TextViewOnClickWrapper
 
 private const val TAG = "TextEditingDialog"
@@ -74,6 +75,8 @@ class TextEditingDialog(
         applyButton.text = moduleRes.getText(R.string.apply)
         originButton.text = moduleRes.getText(R.string.perform_origin_click)
         highlightTextCheckBox.text = moduleRes.getText(R.string.highlight_text)
+        applyButton.tag = IGNORE_HOOK
+        originButton.tag = IGNORE_HOOK
 
         highlightTextCheckBox.isChecked = showTextHighlight
         highlightTextCheckBox.setOnCheckedChangeListener { _, isChecked ->

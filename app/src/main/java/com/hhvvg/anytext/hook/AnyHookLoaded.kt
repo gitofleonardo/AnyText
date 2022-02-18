@@ -14,10 +14,10 @@ import androidx.core.view.children
 import com.hhvvg.anytext.utils.DEFAULT_SHARED_PREFERENCES_FILE_NAME
 import com.hhvvg.anytext.utils.KEY_SHOW_TEXT_BORDER
 import com.hhvvg.anytext.utils.PACKAGE_NAME
+import com.hhvvg.anytext.utils.hookViewListener
 import com.hhvvg.anytext.wrapper.TextViewOnClickWrapper
 import de.robv.android.xposed.IXposedHookLoadPackage
 import de.robv.android.xposed.XC_MethodHook
-import de.robv.android.xposed.XSharedPreferences
 import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.callbacks.XC_LoadPackage
@@ -31,25 +31,49 @@ class AnyHookLoaded : IXposedHookLoadPackage {
         if (p0 == null) {
             return
         }
-        val packageName = p0.packageName
+
         // Don't hook itself
+        val packageName = p0.packageName
         if (packageName == PACKAGE_NAME) {
             return
         }
-        val spInstance = XSharedPreferences(packageName, DEFAULT_SHARED_PREFERENCES_FILE_NAME)
-        val appName = spInstance.getString(packageName, null)
-        val appClazz: Class<Application> = if (appName != null) {
-            try {
-                XposedHelpers.findClass(appName, p0.classLoader) as Class<Application>
-            } catch (e: Exception) {
-                Application::class.java
-            }
-        } else {
-            Application::class.java
-        }
+
+        // Hook onCreate method in Application
+        val appClazz: Class<Application> = Application::class.java
         val methodHook = ApplicationOnCreateMethodHook()
         val method = XposedHelpers.findMethodBestMatch(appClazz, "onCreate", arrayOf(), arrayOf())
         XposedBridge.hookMethod(method, methodHook)
+
+        // Hook setOnClickListener in TextView
+        val clickMethodHook = TextViewOnClickMethodHook()
+        val clickMethod = XposedHelpers.findMethodBestMatch(
+            TextView::class.java,
+            "setOnClickListener",
+            View.OnClickListener::class.java
+        )
+        XposedBridge.hookMethod(clickMethod, clickMethodHook)
+    }
+
+    private class TextViewOnClickMethodHook : XC_MethodHook() {
+        override fun afterHookedMethod(param: MethodHookParam?) {
+            // After calling setOnClickListener, our wrapper listener will be replaced
+            // So hook again to ensure the click listener is always our wrapper one
+            if (param == null) {
+                return
+            }
+            val tv = param.thisObject
+            if (tv !is TextView) {
+                return
+            }
+            tv.isClickable = true
+            hookViewListener(tv) { originListener ->
+                if (originListener is TextViewOnClickWrapper) {
+                    originListener
+                } else {
+                    TextViewOnClickWrapper(originListener, tv)
+                }
+            }
+        }
     }
 
     private class ApplicationOnCreateMethodHook : XC_MethodHook() {
@@ -97,38 +121,35 @@ class AnyHookLoaded : IXposedHookLoadPackage {
         }
 
         override fun onActivityPostCreated(activity: Activity, savedInstanceState: Bundle?) {
-            val spInstance = activity.getSharedPreferences(DEFAULT_SHARED_PREFERENCES_FILE_NAME, Context.MODE_PRIVATE)
+            val spInstance = activity.getSharedPreferences(
+                DEFAULT_SHARED_PREFERENCES_FILE_NAME,
+                Context.MODE_PRIVATE
+            )
             val showTextHighlight = spInstance.getBoolean(KEY_SHOW_TEXT_BORDER, false)
             val contentView = activity.window.decorView as ViewGroup
-            iterateHook(contentView, showTextHighlight)
+            dfsHookTextView(contentView, showTextHighlight)
             contentView.viewTreeObserver.addOnGlobalLayoutListener {
-                iterateHook(contentView, showTextHighlight)
+                dfsHookTextView(contentView, showTextHighlight)
             }
         }
 
-        private fun iterateHook(viewGroup: ViewGroup, showHighlight: Boolean) {
+        private fun dfsHookTextView(viewGroup: ViewGroup, showHighlight: Boolean) {
             val children = viewGroup.children
             for (child in children) {
                 if (child is ViewGroup) {
-                    iterateHook(child, showHighlight)
+                    dfsHookTextView(child, showHighlight)
                     continue
                 }
                 if (child !is TextView) {
                     continue
                 }
-                val info = XposedHelpers.callMethod(child, "getListenerInfo")
-                val originListener =
-                    XposedHelpers.getObjectField(info, "mOnClickListener")
-                if (originListener == null) {
-                    child.setOnClickListener(TextViewOnClickWrapper(null, child))
-                } else if (originListener !is TextViewOnClickWrapper) {
-                    // Not hooked
-                    child.setOnClickListener(
-                        TextViewOnClickWrapper(
-                            originListener as View.OnClickListener,
-                            child
-                        )
-                    )
+                child.isClickable = true
+                hookViewListener(child) { originListener ->
+                    if (originListener is TextViewOnClickWrapper) {
+                        originListener
+                    } else {
+                        TextViewOnClickWrapper(originListener, child)
+                    }
                 }
                 // Set text highlight or not
                 if (showHighlight) {
