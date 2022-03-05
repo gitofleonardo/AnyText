@@ -1,5 +1,11 @@
 # AnyText
 
+## Attention
+
+This repository will probably not update any longer, since I am now wirting a new app to change view attributes while running. It's like element inspection in web development. Follow this [link](https://github.com/gitofleonardo/AnyDebug).
+
+本仓库不会再更新（可能），因为我现在在写一个更加通用的应用，用来修改应用运行过程中的View参数，就像web开发中的元素审查一样。详情可以查看[这里](https://github.com/gitofleonardo/AnyDebug)。
+
 ## What's this
 
 This application provides features to modify any TextView in any other applications.
